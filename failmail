@@ -1,0 +1,23 @@
+#!/bin/bash
+
+. $HOME/.profile
+
+CMD=$1
+MAIL=$2
+DIR=$TMPDIR
+if [ -z $DIR ]; then DIR=/tmp; fi
+
+logfile=$DIR/$RANDOM.log
+$CMD  >>$logfile 2>&1
+status=${PIPESTATUS[0]}
+
+
+if [ $status -ne 0 ]
+    then
+	mail -s "Failed to execute: $CMD" $MAIL < $logfile
+	rm $logfile
+	exit 1
+    else
+	rm $logfile
+	exit
+fi
