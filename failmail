@@ -2,22 +2,32 @@
 
 . $HOME/.profile
 
+DEFAULT_TIMEOUT=86400 # 24 hours
+
 CMD=$1
 MAIL=$2
+TIMEOUT=$3
+if [ -z $TIMEOUT ]; then TIMEOUT=$DEFAULT_TIMEOUT; fi
 DIR=$TMPDIR
 if [ -z $DIR ]; then DIR=/tmp; fi
 
 logfile=$DIR/$RANDOM.log
-$CMD  >>$logfile 2>&1
+timeout $TIMEOUT $CMD >>$logfile 2>&1
 status=${PIPESTATUS[0]}
 
-
+if [ $status -eq 124 ]
+then
+    echo "Timeout: $TIMEOUT" | mail -s "Failed to execute: $CMD" $MAIL
+    rm $logfile
+    exit $status
+fi
+    
 if [ $status -ne 0 ]
-    then
-	mail -s "Failed to execute: $CMD" $MAIL < $logfile
-	rm $logfile
-	exit 1
-    else
-	rm $logfile
-	exit
+then
+    mail -s "Failed to execute: $CMD" $MAIL < $logfile
+    rm $logfile
+    exit 1
+else
+    rm $logfile
+    exit
 fi
